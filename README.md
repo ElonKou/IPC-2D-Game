@@ -1,8 +1,8 @@
 # Incremental Potential Contact (IPC) based 2D GAME
 
-`Attention`: Tkanks for XunZhan's great work, the [XunZhan version](https://github.com/XunZhan/IPC-2D-Game/fork) only compiles code succeed on old version of taichi(<= 0.7.31) and also doesn't match Mac M1, this version only fixed taihci-language bug.
+`Attention`: Thanks for XunZhan's great work, the [XunZhan version](https://github.com/XunZhan/IPC-2D-Game/fork) only compiles code succeed on old version of taichi(<= 0.7.31) and also doesn't match Mac M1, this version only fixed taichi-language bug.
 
-## Insatll instruction
+## Install instruction
 ```bash
 # download new verison taichi and run the code.
 pip install taichi
