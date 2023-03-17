@@ -1,5 +1,14 @@
 # Incremental Potential Contact (IPC) based 2D GAME
 
+`Attention`: Tkanks for XunZhan's great work, the [XunZhan version](https://github.com/XunZhan/IPC-2D-Game/fork) only compiles code succeed on old version of taichi(<= 0.7.31) and also doesn't match Mac M1, this version only fixed taihci-language bug.
+
+## Insatll instruction
+```bash
+# download new verison taichi and run the code.
+pip install taichi
+python3 ipc2d.py
+```
+
 ## Project Information
 Incremental Potential Contact (hereinafter referred to as IPC), is the paper of SIGGRAPH 2020 and its simulation effect is very accurate and stable, which is worthy of in-depth understanding and research. However, the IPC source code is based on C + + and has many dependencies and puts emphasis on performance optimization. This results in a complex procedure for building up the environment and makes it difficult for beginners to learn. Therefore, this project uses Taichi programming language to realize the 2D IPC algorithm. And by using the TowerBlock style game, the accuracy of the algorithm is realized and verified.
 

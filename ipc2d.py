@@ -98,23 +98,23 @@ class System:
         self.on = 100
         self.vn = 1000
         self.en = 1000
-        self.node = ti.Vector(self.dim, dt=ti.f32, shape=self.vn, needs_grad=True)
-        self.prev_node = ti.Vector(self.dim, dt=ti.f32, shape=self.vn)
-        self.prev_t_node = ti.Vector(self.dim, dt=ti.f32, shape=self.vn)
-        self.bar_node = ti.Vector(self.dim, dt=ti.f32, shape=self.vn)
-        self.p = ti.Vector(self.dim, dt=ti.f32, shape=self.vn)
-        self.element = ti.Vector(self.dim + 1, dt=ti.i32, shape=self.en)
+        self.node = ti.Vector.field(self.dim, dtype=ti.f32, shape=self.vn, needs_grad=True)
+        self.prev_node = ti.Vector.field(self.dim, dtype=ti.f32, shape=self.vn)
+        self.prev_t_node = ti.Vector.field(self.dim, dtype=ti.f32, shape=self.vn)
+        self.bar_node = ti.Vector.field(self.dim, dtype=ti.f32, shape=self.vn)
+        self.p = ti.Vector.field(self.dim, dtype=ti.f32, shape=self.vn)
+        self.element = ti.Vector.field(self.dim + 1, dtype=ti.i32, shape=self.en)
 
         #  the end index of i's object
-        self.vn_object_index = ti.var(dt=ti.i32, shape=self.on)
-        self.en_object_index = ti.var(dt=ti.i32, shape=self.on)
-        self.count = ti.var(dt=ti.i32, shape=())
+        self.vn_object_index = ti.field(dtype=ti.i32, shape=self.on)
+        self.en_object_index = ti.field(dtype=ti.i32, shape=self.on)
+        self.count = ti.field(dtype=ti.i32, shape=())
 
         #  the inverse obj id of each node and ele
-        self.node_obj_idx = ti.var(dt=ti.i32, shape=self.vn)
-        self.element_obj_idx = ti.var(dt=ti.i32, shape=self.en)
+        self.node_obj_idx = ti.field(dtype=ti.i32, shape=self.vn)
+        self.element_obj_idx = ti.field(dtype=ti.i32, shape=self.en)
 
-        ## for simulation
+        # for simulation
         self.E = 6000  # Young modulus
         self.nu = 0.4  # Poisson's ratio: nu \in [0, 0.5)
         self.mu = self.E / (2 * (1 + self.nu))
@@ -124,28 +124,28 @@ class System:
         self.k = 1  # contact stiffness
 
         # self.velocity = ti.Vector(self.dim, dt=ti.f32, shape=self.vn)
-        self.node_mass = ti.var(dt=ti.f32, shape=self.vn)
-        self.element_mass = ti.var(dt=ti.f32, shape=self.en)
-        self.element_volume = ti.var(dt=ti.f32, shape=self.en)
-        self.energy = ti.var(dt=ti.f32, shape=(), needs_grad=True)
-        self.prev_energy = ti.var(dt=ti.f32, shape=())
-        self.B = ti.Matrix(self.dim, self.dim, dt=ti.f32, shape=self.en)
-        self.neighbor_element_count = ti.var(dt=ti.i32, shape=self.vn)
+        self.node_mass = ti.field(dtype=ti.f32, shape=self.vn)
+        self.element_mass = ti.field(dtype=ti.f32, shape=self.en)
+        self.element_volume = ti.field(dtype=ti.f32, shape=self.en)
+        self.energy = ti.field(dtype=ti.f32, shape=(), needs_grad=True)
+        self.prev_energy = ti.field(dtype=ti.f32, shape=())
+        self.B = ti.Matrix.field(self.dim, self.dim, dtype=ti.f32, shape=self.en)
+        self.neighbor_element_count = ti.field(dtype=ti.i32, shape=self.vn)
 
-        ## for rendering
-        self.begin_point = ti.Vector(self.dim, ti.f32, shape=(self.en * 3))
-        self.end_point = ti.Vector(self.dim, ti.f32, shape=(self.en * 3))
-        self.node_energy = ti.var(dt=ti.f32, shape=self.vn)
-        self.edge_energy = ti.var(dt=ti.f32, shape=(self.en * 3))
+        # for rendering
+        self.begin_point = ti.Vector.field(self.dim, ti.f32, shape=(self.en * 3))
+        self.end_point = ti.Vector.field(self.dim, ti.f32, shape=(self.en * 3))
+        self.node_energy = ti.field(dtype=ti.f32, shape=self.vn)
+        self.edge_energy = ti.field(dtype=ti.f32, shape=(self.en * 3))
         self.score = 0
-        self.rendering_u0 = ti.var(dt=ti.f32, shape=())
-        self.rendering_u1 = ti.var(dt=ti.f32, shape=())
-        self.rendering_u2 = ti.var(dt=ti.f32, shape=())
-        self.rendering_u3 = ti.var(dt=ti.f32, shape=())
-        self.game_over = ti.var(dt=ti.i32, shape=())
-        ## the controlled object
-        self.ctrl_obj = ti.var(dt=ti.i32, shape=())
-        self.move_d = ti.var(dt=ti.f32, shape=())
+        self.rendering_u0 = ti.field(dtype=ti.f32, shape=())
+        self.rendering_u1 = ti.field(dtype=ti.f32, shape=())
+        self.rendering_u2 = ti.field(dtype=ti.f32, shape=())
+        self.rendering_u3 = ti.field(dtype=ti.f32, shape=())
+        self.game_over = ti.field(dtype=ti.i32, shape=())
+        # the controlled object
+        self.ctrl_obj = ti.field(dtype=ti.i32, shape=())
+        self.move_d = ti.field(dtype=ti.f32, shape=())
         self.ctrl_obj[None] = -1
         self.move_d[None] = 1e-3
 
@@ -158,26 +158,26 @@ class System:
                 ):
 
         for i in range(vn):
-            self.node[self.vn_object_index[self.count] + i] = [node[i, 0], node[i, 1]]
-            self.prev_node[self.vn_object_index[self.count] + i] = [node[i, 0], node[i, 1]]
-            self.prev_t_node[self.vn_object_index[self.count] + i] = [node[i, 0], node[i, 1]]
-            self.bar_node[self.vn_object_index[self.count] + i] = [node[i, 0], node[i, 1]]
-            self.node_obj_idx[self.vn_object_index[self.count] + i] = self.count + 1
+            self.node[self.vn_object_index[self.count[None]] + i] = [node[i, 0], node[i, 1]]
+            self.prev_node[self.vn_object_index[self.count[None]] + i] = [node[i, 0], node[i, 1]]
+            self.prev_t_node[self.vn_object_index[self.count[None]] + i] = [node[i, 0], node[i, 1]]
+            self.bar_node[self.vn_object_index[self.count[None]] + i] = [node[i, 0], node[i, 1]]
+            self.node_obj_idx[self.vn_object_index[self.count[None]] + i] = self.count[None] + 1
 
         for i in range(en):
             # Mapping single object element id to system-wide
-            self.element[self.en_object_index[self.count] + i] = \
-                [self.vn_object_index[self.count] + element[i, 0],
-                 self.vn_object_index[self.count] + element[i, 1],
-                 self.vn_object_index[self.count] + element[i, 2]]
-            self.element_obj_idx[self.en_object_index[self.count] + i] = self.count + 1
+            self.element[self.en_object_index[self.count[None]] + i] = \
+                [self.vn_object_index[self.count[None]] + element[i, 0],
+                 self.vn_object_index[self.count[None]] + element[i, 1],
+                 self.vn_object_index[self.count[None]] + element[i, 2]]
+            self.element_obj_idx[self.en_object_index[self.count[None]] + i] = self.count[None] + 1
 
         # update vn_object_index and en_object_index
-        self.vn_object_index[self.count + 1] = self.vn_object_index[self.count] + vn
-        self.en_object_index[self.count + 1] = self.en_object_index[self.count] + en
-        self.count += 1
+        self.vn_object_index[self.count[None] + 1] = self.vn_object_index[self.count[None]] + vn
+        self.en_object_index[self.count[None] + 1] = self.en_object_index[self.count[None]] + en
+        self.count[None] += 1
 
-        for i in range(self.en_object_index[self.count - 1], self.en_object_index[self.count]):
+        for i in range(self.en_object_index[self.count[None] - 1], self.en_object_index[self.count[None]]):
             D = self.D(i)
             self.B[i] = D.inverse()
             a, b, c = self.element[i][0], self.element[i][1], self.element[i][2]
@@ -190,8 +190,8 @@ class System:
             self.neighbor_element_count[b] += 1
             self.neighbor_element_count[c] += 1
 
-        for i in range(self.vn_object_index[self.count - 1], self.vn_object_index[self.count]):
-            self.node_mass[i] /= max(self.neighbor_element_count[i], 1)
+        for i in range(self.vn_object_index[self.count[None] - 1], self.vn_object_index[self.count[None]]):
+            self.node_mass[i] /= ti.max(self.neighbor_element_count[i], 1)
 
     @ti.func
     def D(self, idx):
@@ -208,14 +208,14 @@ class System:
     @ti.func
     def Psi(self, i):  # (strain) energy density
         F = self.F(i)
-        J = max(F.determinant(), 0.01)
+        J = ti.max(F.determinant(), 0.01)
         return self.mu / 2 * ((F @ F.transpose()).trace() - self.dim) - self.mu * ti.log(J) + self.la / 2 * ti.log(
             J) ** 2
 
     @ti.kernel
     def create_lines(self):
         count = 0
-        for i in range(self.en_object_index[self.count]):
+        for i in range(self.en_object_index[self.count[None]]):
             p1 = self.node[self.element[i][0]] * screen_to_world_ratio / screen_res
             p2 = self.node[self.element[i][1]] * screen_to_world_ratio / screen_res
             p3 = self.node[self.element[i][2]] * screen_to_world_ratio / screen_res
@@ -320,7 +320,7 @@ class System:
         else:
             d3 = ti.abs((t1.y - t3.y) * pt.x - (t1.x - t3.x) * pt.y + t1.x * t3.y - t1.y * t3.x) / (t1 - t3).norm()
 
-        dist = min(d1, d2, d3)
+        dist = ti.min(d1, d2, d3)
         # b_C2 function
         if dist < self.bar_d:
             rt = -self.k * ((dist - self.bar_d) ** 2) * ti.log(dist / self.bar_d)
@@ -335,23 +335,23 @@ class System:
     @ti.kernel
     def update_barrier_energy(self):
 
-        for i in range(self.en_object_index[self.count]):
+        for i in range(self.en_object_index[self.count[None]]):
             self.energy[None] += self.U0(i) * self.dt * self.dt
             self.energy[None] += self.U1(i) * self.dt * self.dt
 
-        for i in range(self.en_object_index[self.count]):
+        for i in range(self.en_object_index[self.count[None]]):
             self.energy[None] += self.U2(i)
             self.energy[None] += self.U3(i)
 
         # i, j: object
         # p: node, q:face
-        for i in range(1, self.count + 1):
-            for j in range(i + 1, self.count + 1):
+        for i in range(1, self.count[None] + 1):
+            for j in range(i + 1, self.count[None] + 1):
                 for p in range(self.vn_object_index[i - 1], self.vn_object_index[i]):
                     for q in range(self.en_object_index[j - 1], self.en_object_index[j]):
                         self.energy[None] += self.barrier_energy(p, q)
-        for i in range(1, self.count + 1):
-            for j in range(i + 1, self.count + 1):
+        for i in range(1, self.count[None] + 1):
+            for j in range(i + 1, self.count[None] + 1):
                 for p in range(self.vn_object_index[j - 1], self.vn_object_index[j]):
                     for q in range(self.en_object_index[i - 1], self.en_object_index[i]):
                         self.energy[None] += self.barrier_energy(p, q)
@@ -378,15 +378,15 @@ class System:
         # p,q node, face
         # flag 0: not contact, >0: contact
         flag = 0
-        for i in range(1, self.count + 1):
-            for j in range(1, self.count + 1):
+        for i in range(1, self.count[None] + 1):
+            for j in range(1, self.count[None] + 1):
                 for p in range(self.vn_object_index[i - 1], self.vn_object_index[i]):
                     for q in range(self.en_object_index[j - 1], self.en_object_index[j]):
                         if i != j:
                             flag += self.implicit_prob_node_in_element(p, q)
 
         # boundary
-        for t in range(self.vn_object_index[self.count]):
+        for t in range(self.vn_object_index[self.count[None]]):
             if self.node[t][0] <= boundary[0][0] + self.epsilon:
                 flag += 1
             if self.node[t][0] > boundary[0][1] - self.epsilon:
@@ -417,27 +417,27 @@ class System:
 
     @ti.kernel
     def calc_x_bar(self):
-        for i in range(self.vn_object_index[self.count]):
+        for i in range(self.vn_object_index[self.count[None]]):
             self.bar_node[i] = 2 * self.node[i] - self.prev_t_node[i] + [0, -10 * self.dt * self.dt / self.node_mass[i]]
 
     @ti.kernel
     def x_bar_to_x(self):
-        for i in range(self.vn_object_index[self.count]):
+        for i in range(self.vn_object_index[self.count[None]]):
             self.node[i] = self.bar_node[i]
 
     @ti.kernel
     def x_to_prev_x(self):
-        for i in range(self.vn_object_index[self.count]):
+        for i in range(self.vn_object_index[self.count[None]]):
             self.prev_node[i] = self.node[i]
 
     @ti.kernel
     def x_to_prev_t_x(self):
-        for i in range(self.vn_object_index[self.count]):
+        for i in range(self.vn_object_index[self.count[None]]):
             self.prev_t_node[i] = self.node[i]
 
     @ti.kernel
     def calc_p(self):
-        for i in range(self.vn_object_index[self.count]):
+        for i in range(self.vn_object_index[self.count[None]]):
             self.p[i] = self.node.grad[i]
 
     @ti.kernel
@@ -447,65 +447,68 @@ class System:
     @ti.kernel
     def calc_p_inf_norm(self) -> float:
         m = 0.0
-        for i in range(self.vn_object_index[self.count]):
-            m = max(self.p[i][0], m)
-            m = max(self.p[i][1], m)
+        for i in range(self.vn_object_index[self.count[None]]):
+            m = ti.max(self.p[i][0], m)
+            m = ti.max(self.p[i][1], m)
         return m
 
     @ti.kernel
     def update_node(self, alpha: ti.f32):
-        for i in range(self.vn_object_index[self.count]):
+        for i in range(self.vn_object_index[self.count[None]]):
             self.node[i] = self.prev_node[i] - self.p[i] * alpha
 
     @ti.kernel
     def reset_node_energy_for_rendering(self):
-        for i in range(self.vn_object_index[self.count]):
+        for i in range(self.vn_object_index[self.count[None]]):
             self.node_energy[i] = 0.0
-        self.rendering_u0 = 0.0
-        self.rendering_u1 = 0.0
-        self.rendering_u2 = 0.0
-        self.rendering_u3 = 0.0
+        self.rendering_u0[None] = 0.0
+        self.rendering_u1[None] = 0.0
+        self.rendering_u2[None] = 0.0
+        self.rendering_u3[None] = 0.0
+
     @ti.kernel
     def if_lose(self):
         if self.count[None] > 1:
-            for i in range(2, self.count + 1):
+            for i in range(2, self.count[None] + 1):
                 for p in range(self.vn_object_index[i - 1], self.vn_object_index[i]):
-                    if self.node[p][1] - boundary[1][0] <= self.bar_d: # is on the floor
+                    if self.node[p][1] - boundary[1][0] <= self.bar_d:  # is on the floor
                         # print("obj: ", i, "node: ", p)
                         self.game_over[None] = 1
-                        return
+                        # continue
+                        break
+
     @ti.kernel
     def calc_node_energy_for_rendering(self):
-        for i in range(self.en_object_index[self.count]):
-            self.rendering_u0 += self.U0(i) * self.dt * self.dt
-            self.rendering_u1 += self.U1(i) * self.dt * self.dt
+        for i in range(self.en_object_index[self.count[None]]):
+            self.rendering_u0[None] += self.U0(i) * self.dt * self.dt
+            self.rendering_u1[None] += self.U1(i) * self.dt * self.dt
 
-        for obj_idx in range(1, self.count + 1):
+        for obj_idx in range(1, self.count[None] + 1):
             for i in range(self.vn_object_index[obj_idx - 1], self.vn_object_index[obj_idx]):
                 t2 = self.U2(i)
                 t3 = self.U3(i)
                 self.node_energy[i] += t2
                 self.node_energy[i] += t3
-                self.rendering_u2 += t2
-                self.rendering_u3 += t3
+                self.rendering_u2[None] += t2
+                self.rendering_u3[None] += t3
 
         # i, j: object
         # p: node, q:face
-        for i in range(1, self.count + 1):
-            for j in range(i + 1, self.count + 1):
+        for i in range(1, self.count[None] + 1):
+            for j in range(i + 1, self.count[None] + 1):
                 for p in range(self.vn_object_index[i - 1], self.vn_object_index[i]):
                     for q in range(self.en_object_index[j - 1], self.en_object_index[j]):
                         t3 = self.barrier_energy(p, q)
                         self.node_energy[p] += t3
-                        self.rendering_u3 += t3
+                        self.rendering_u3[None] += t3
 
-        for i in range(1, self.count + 1):
-            for j in range(i + 1, self.count + 1):
+        for i in range(1, self.count[None] + 1):
+            for j in range(i + 1, self.count[None] + 1):
                 for p in range(self.vn_object_index[j - 1], self.vn_object_index[j]):
                     for q in range(self.en_object_index[i - 1], self.en_object_index[i]):
                         t3 = self.barrier_energy(p, q)
                         self.node_energy[p] += t3
-                        self.rendering_u3 += t3
+                        self.rendering_u3[None] += t3
 
 
 def render(gui, system, obj, cur_add_time):
@@ -534,7 +537,7 @@ def render(gui, system, obj, cur_add_time):
         system.rendering_u2.to_numpy(),
         system.rendering_u3.to_numpy(),
     ]
-    system.score=max(system.score,energy_list[3])
+    system.score = max(system.score, energy_list[3])
 
     # render waiting object
     if obj != -1:
@@ -550,7 +553,7 @@ def render(gui, system, obj, cur_add_time):
     gui.text(content=f'Key A: Next, Key Space: Drop', pos=(0, 0.95), color=text_color)
     gui.text(content=f'Current Objs / Max Objs: {cur_add_time} / {max_add_time}', pos=(0, 0.9), color=text_color)
     if system.game_over[None] == 1:
-        gui.text(content=f'GAME OVER', pos=(0.4, 0.5), color=line_color,font_size=20)
+        gui.text(content=f'GAME OVER', pos=(0.4, 0.5), color=line_color, font_size=20)
     for i in range(4):
         gui.text(content=f'{et[i]} {energy_list[i]}', pos=(0, 0.85 - i*0.05), color=text_color)
 
@@ -559,10 +562,10 @@ def render(gui, system, obj, cur_add_time):
 
 def rand_file(cur_obj):
     # 0: 1*2 rectangle , 1: 2*1 rectangle, 2: sqare, 3: triangle
-    if cur_obj==0:
+    if cur_obj == 0:
         return "obj0"
 
-    return choice(os.listdir("/home/zhuyinheng/PycharmProjects/2dIPC/GAMES-201-Advanced-Physics-Engines/TowerBlock copy/model"))[:4]
+    return choice(os.listdir("./model"))[:4]
 
 
 def implicit():
